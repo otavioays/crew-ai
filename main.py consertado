@@ -1,0 +1,39 @@
+import google.generativeai as genai
+import pandas as pd
+import time
+
+
+genai.configure(api_key="SAIzaSyCqWtgbfGLO3TxZm1L6ZQ0kYrCCDiCVUH0")
+
+
+df = pd.read_csv("POP2024_20241230.xls") 
+cidades = df[df["populacao"] > 30000]["cidade"].tolist()
+
+model = genai.GenerativeModel(
+    "models/gemini-1.5-pro-latest",
+    tools=[genai.tools.GoogleSearchResults()],
+)
+
+
+resultados = {}
+
+
+for cidade in cidades[:5]:
+    prompt = f"""
+    Liste apenas 5 links diretos para portais ou jornais de notícias da cidade de {cidade}, no Brasil.
+    Foque em links reais de sites locais ou regionais. Não explique, apenas liste os links.
+    """
+
+    try:
+        response = model.generate_content(prompt)
+        resultados[cidade] = response.text
+        print(f"[OK] {cidade}")
+    except Exception as e:
+        resultados[cidade] = f"Erro: {e}"
+        print(f"[ERRO] {cidade} - {e}")
+
+    time.sleep(1)  # evita spam à API
+
+
+for cidade, links in resultados.items():
+    print(f"\n🔗 {cidade}:\n{links}")
